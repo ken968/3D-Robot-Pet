@@ -1,6 +1,3 @@
-// =======================================================================
-// ===== KREDENSIAL BLYNK & WIFI =====
-// =======================================================================
 #define BLYNK_TEMPLATE_ID "TMPL6SZ7bn_H3"
 #define BLYNK_TEMPLATE_NAME "Quadruped Bot"
 #define BLYNK_AUTH_TOKEN "M7eCe1F62cMe96_puYorHIKBz6bp-uyZ"
