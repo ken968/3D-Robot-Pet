@@ -1,13 +1,13 @@
 // =======================================================================
 // ===== KREDENSIAL BLYNK & WIFI =====
 // =======================================================================
-#define BLYNK_TEMPLATE_ID ""
-#define BLYNK_TEMPLATE_NAME " "
-#define BLYNK_AUTH_TOKEN ""
+#define BLYNK_TEMPLATE_ID "TMPL6SZ7bn_H3"
+#define BLYNK_TEMPLATE_NAME "Quadruped Bot"
+#define BLYNK_AUTH_TOKEN "M7eCe1F62cMe96_puYorHIKBz6bp-uyZ"
 
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "";
-char pass[] = "";
+char ssid[] = "RR";
+char pass[] = "wlanad1e27";
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
 #include <Wire.h>
@@ -86,15 +86,19 @@ BLYNK_WRITE(V4) { // Tombol LED OFF
   }
 }
 
-BLYNK_WRITE(V5) { // Tombol Second Mode
+BLYNK_WRITE(V5) { // Tombol eshait
   if (param.asInt() == 1) { currentCmd = 'E'; } else { currentCmd = ' '; }
 }
+BLYNK_WRITE(V7) { // Sleepy nigga
+  if (param.asInt() == 1) { currentCmd = 'Q'; } else { currentCmd = ' '; }
+}
+
 
 // ===== KONTROL DARI SERIAL MONITOR (CMD) =====
 void checkSerialCommands() {
   if (Serial.available() > 0) {
     char c = toupper(Serial.read());
-    if (c == 'W' || c == 'A' || c == 'D' || c == ' ' || c == 'E' || c == 'S') {
+    if (c == 'W' || c == 'A' || c == 'D' || c == ' ' || c == 'E' || c == 'S' || c == 'Q') {
         currentCmd = c;
         Serial.print("Perintah Gerak: "); Serial.println(c);
     } else if (c == '1') {
@@ -387,6 +391,17 @@ void updateRobotMovement() {
                 }
                 break;
         }
+    }
+
+    // Tidur 
+    else if (currentCmd == 'Q') {
+      if (robotStep == 0) {
+          pca.setPWM(0, 0, angleToPulse(160)); pca.setPWM(1, 0, angleToPulse(15));
+          pca.setPWM(2, 0, angleToPulse(20)); pca.setPWM(3, 0, angleToPulse(155));
+          pca.setPWM(4, 0, angleToPulse(160)); pca.setPWM(5, 0, angleToPulse(15));
+          pca.setPWM(6, 0, angleToPulse(15)); pca.setPWM(7, 0, angleToPulse(160));
+          robotStep = 1;
+      }
     }
 }
 
