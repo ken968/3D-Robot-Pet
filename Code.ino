@@ -12,6 +12,11 @@ char pass[] = "wlanad1e27";
 #include <BlynkSimpleEsp32.h>
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <U8g2lib.h>
+
+#define OLED_SDA 18
+#define OLED_SCL 19
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ OLED_SCL, /* data=*/ OLED_SDA, /* reset=*/ U8X8_PIN_NONE);
 
 Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
 
@@ -33,14 +38,79 @@ int robotStep = 0;
 char currentCmd = ' ';
 char lastCmd = ' ';
 
+// Variabel untuk tracking tampilan OLED
+char lastDisplayedCmd = '\0';
+unsigned long prevMillisOLED = 0;
+int oledAnimFrame = 0; // Frame untuk animasi OLED
+
+#include "idle.h"
+// #include <tidur.ino>
+#include "saatGerak.h"
+// #include <wlee.ino>
+
 // ===== FUNGSI BANTU =====
 int angleToPulse(int ang) {
     return map(ang, 0, 180, SERVOMIN, SERVOMAX);
 }
 
+void updateOLEDDisplay() {
+    unsigned long now = millis();
+    // Update animasi setiap 50ms (sesuai dengan delay di kode asli)
+    if (now - prevMillisOLED >= 1) {
+        prevMillisOLED = now;
+        
+        // Reset frame jika command berubah
+        if (currentCmd != lastDisplayedCmd) {
+            lastDisplayedCmd = currentCmd;
+            oledAnimFrame = 0;
+        }
+        
+        u8g2.clearBuffer();
+        
+        switch(currentCmd) {
+            case ' ': // Standby/Idle
+                tampilkanIdleFrame(oledAnimFrame);
+                break;
+                
+            case 'W': // Maju
+            case 'S': // Mundur
+            case 'A': // Belok Kiri
+            case 'D': // Belok Kanan
+                tampilkanSaatGerakFrame(oledAnimFrame);
+                break;
+                
+            // case 'Q': // Tidur
+            //     tampilkanTidurFrame(oledAnimFrame);
+            //     break;
+                
+            // case 'E': // Duduk
+            //     tampilkanWleeFrame(oledAnimFrame);
+            //     break;
+                
+            default:
+                tampilkanIdleFrame(oledAnimFrame);
+                break;
+        }
+        
+        u8g2.sendBuffer();
+        
+        // Increment frame untuk animasi berikutnya
+        oledAnimFrame++;
+    }
+}
+
 // ===== SETUP =====
 void setup() {
     Serial.begin(115200);
+     // Inisialisasi OLED
+    u8g2.begin();
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.drawStr(0, 15, "Quadruped Bot");
+    u8g2.drawStr(0, 30, "Starting...");
+    u8g2.sendBuffer();
+    delay(2000);
+
     Blynk.begin(auth, ssid, pass);
 
     pca.begin();
@@ -51,6 +121,7 @@ void setup() {
     pinMode(led2, OUTPUT);
 
     currentCmd = ' '; // 'Spasi' untuk Standby
+    Serial.println("Robot siap!");
 }
 
 // =============================================================
@@ -411,4 +482,5 @@ void loop() {
     checkSerialCommands();
     updateLED();
     updateRobotMovement();
+    updateOLEDDisplay();
 }
