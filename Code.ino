@@ -1,13 +1,13 @@
 // =======================================================================
 // ===== KREDENSIAL BLYNK & WIFI =====
 // =======================================================================
-#define BLYNK_TEMPLATE_ID "TMPL6SZ7bn_H3"
-#define BLYNK_TEMPLATE_NAME "Quadruped Bot"
-#define BLYNK_AUTH_TOKEN "M7eCe1F62cMe96_puYorHIKBz6bp-uyZ"
+#define BLYNK_TEMPLATE_ID ""
+#define BLYNK_TEMPLATE_NAME ""
+#define BLYNK_AUTH_TOKEN "-uyZ"
 
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "RR";
-char pass[] = "wlanad1e27";
+char ssid[] = "";
+char pass[] = "";
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
 #include <Wire.h>
