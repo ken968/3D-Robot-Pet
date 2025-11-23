@@ -1,13 +1,10 @@
-// =======================================================================
-// ===== KREDENSIAL BLYNK & WIFI =====
-// =======================================================================
 #define BLYNK_TEMPLATE_ID ""
 #define BLYNK_TEMPLATE_NAME ""
 #define BLYNK_AUTH_TOKEN ""
 
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "";
-char pass[] = "";
+char ssid[] = "ssid";
+char pass[] = "passwd";
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
 #include <Wire.h>
