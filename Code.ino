@@ -1,6 +1,3 @@
-// =======================================================================
-// ===== KREDENSIAL BLYNK & WIFI =====
-// =======================================================================
 #define BLYNK_TEMPLATE_ID "TMPL6SZ7bn_H3"
 #define BLYNK_TEMPLATE_NAME "Quadruped Bot"
 #define BLYNK_AUTH_TOKEN "M7eCe1F62cMe96_puYorHIKBz6bp-uyZ"
@@ -17,11 +14,9 @@ char pass[] = "wlanad1e27";
 Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
-// ===== PENGATURAN SERVO =====
 #define SERVOMIN 150
 #define SERVOMAX 600
 
-// ===== PENGATURAN PIN LED =====
 int led1 = 2; // GPIO2
 int led2 = 4; // GPIO4
 bool ledAktif = false;
@@ -35,16 +30,43 @@ int robotStep = 0;
 char currentCmd = ' ';
 char lastCmd = ' ';
 
+// ===== PENGATURAN SENSOR & SERVO LEHER =====
+#define TRIG_PIN 18
+#define ECHO_PIN 19
+#define HEAD_SERVO_PIN 8 //servo leher
+#define BUZZER_PIN 23
+
+// Sudut Servo Leher
+const int HEAD_KIRI = 170;
+const int HEAD_TENGAH = 90;
+const int HEAD_KANAN = 10;
+const int JARAK_WARNING = 7;
+
+// Variabel Mode & Logika
+bool modeAuto = false;  // false = Manual, true = Autopilot
+int autoStep = 0;       // Langkah state machine Autopilot
+unsigned long prevMillisAuto = 0;
+int distKiri = 0, distTengah = 0, distKanan = 0;
+
+// Batas Jarak Aman (cm)
+const int JARAK_AMAN = 20; 
+
+// Fungsi baca jarak (Blocking singkat agar akurat saat scan)
+int getDistance() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long duration = pulseIn(ECHO_PIN, HIGH, 25000); // Timeout 25ms
+  if (duration == 0) return 100; // Jika timeout, anggap jauh
+  return duration * 0.034 / 2;
+}
+
 // Variabel untuk Animasi OLED
 unsigned long prevMillisAnim = 0;
 const int ANIM_DELAY = 50; 
 int currentFrame = 0;
-
-
-
-
-
-
 
 // ==========================================================
 // ===== TEMPELKAN SEMUA DATA BITMAP DI SINI =====
@@ -6108,16 +6130,6 @@ const unsigned char* const epd_bitmap_allArray_IDLE[] PROGMEM = {
 };
 
 const int FRAME_COUNT_IDLE = 89;
-
-
-
-
-
-
-
-
-
-
 
 // --- Data dari saatGerakWASD.ino (YANG SUDAH DI-RENAME) ---
 const unsigned char epd_bitmap_gerak_frame_001 [] PROGMEM = {
@@ -18440,11 +18452,7 @@ const unsigned char* epd_bitmap_allArray_DUDUK[] PROGMEM = {
 
 const int FRAME_COUNT_DUDUK = 89;
 
-
-
 // TIDO ANIAMAOTAIO
-
-// 'ezgif-frame-008', 128x64px
 const unsigned char epd_bitmap_tidur_frame_001 [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -22665,7 +22673,6 @@ const unsigned char epd_bitmap_tidur_frame_063 [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-
 // Array of all bitmaps for convenience. (Total bytes used to store images in PROGMEM = 92560)
 const unsigned char* epd_bitmap_allArray_TIDUR[] PROGMEM = {
 	epd_bitmap_tidur_frame_001,
@@ -22731,39 +22738,15 @@ const unsigned char* epd_bitmap_allArray_TIDUR[] PROGMEM = {
 	epd_bitmap_tidur_frame_061,
 	epd_bitmap_tidur_frame_062,
 	epd_bitmap_tidur_frame_063,
-	// epd_bitmap_tidur_frame_064,
-	// epd_bitmap_tidur_frame_065,
-	// epd_bitmap_tidur_frame_066,
-	// epd_bitmap_tidur_frame_067,
-	// epd_bitmap_tidur_frame_068,
-	// epd_bitmap_tidur_frame_069,
-	// epd_bitmap_tidur_frame_070,
-	// epd_bitmap_tidur_frame_071,
-	// epd_bitmap_tidur_frame_072,
-	// epd_bitmap_tidur_frame_073,
-	// epd_bitmap_tidur_frame_074,
-	// epd_bitmap_tidur_frame_075,
-	// epd_bitmap_tidur_frame_076, 
-	// epd_bitmap_tidur_frame_077,
-	// epd_bitmap_tidur_frame_078,
-	// epd_bitmap_tidur_frame_079,
-	// epd_bitmap_tidur_frame_080,
-	// epd_bitmap_tidur_frame_081,
-	// epd_bitmap_tidur_frame_082,
-	// epd_bitmap_tidur_frame_083,
 };
 const int FRAME_COUNT_TIDUR = 63;
 
-
-
-
 void updateAnimasi() {
     // ... (kode pengecekan waktu animasi yang sudah ada)
-
     const unsigned char* const* currentAnimArray;
     int frameCount;
 
-    // 1. Tentukan Array dan Jumlah Frame yang Aktif
+    // 1. Array dan Jumlah Frame yang Aktif
     if (currentCmd == 'W' || currentCmd == 'A' || currentCmd == 'S' || currentCmd == 'D') {
         currentAnimArray = epd_bitmap_allArray_GERAK;
         frameCount = FRAME_COUNT_GERAK;
@@ -22781,31 +22764,18 @@ void updateAnimasi() {
         currentAnimArray = epd_bitmap_allArray_IDLE;
         frameCount = FRAME_COUNT_IDLE;
     }
-
-
     // 2. Mulai menggambar ke buffer
     u8g2.firstPage();
     do {
         // Gambar frame yang dipilih
         u8g2.drawXBM(0, 0, 128, 64, (const uint8_t*)pgm_read_ptr(&currentAnimArray[currentFrame]));
     } while (u8g2.nextPage()); 
-
-
     // 3. Pindah ke frame berikutnya (menggunakan array yang dipilih)
     currentFrame = (currentFrame + 1) % frameCount;
 }
 // ==========================================================
 // ===== AKHIR DARI DATA BITMAP =====
 // ==========================================================
-
-
-
-
-
-
-
-
-
 // ===== FUNGSI BANTU =====
 int angleToPulse(int ang) {
     return map(ang, 0, 180, SERVOMIN, SERVOMAX);
@@ -22821,8 +22791,14 @@ void setup() {
 		u8g2.begin();
     delay(10);
 
+		pinMode(TRIG_PIN, OUTPUT);
+  	pinMode(ECHO_PIN, INPUT);
     pinMode(led1, OUTPUT);
     pinMode(led2, OUTPUT);
+		pinMode(BUZZER_PIN, OUTPUT);
+  	digitalWrite(BUZZER_PIN, LOW);
+
+		pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_TENGAH));
 
     currentCmd = ' '; // 'Spasi' untuk Standby
 }
@@ -22830,59 +22806,126 @@ void setup() {
 // =============================================================
 // ===== KONTROL DARI APLIKASI BLYNK (MODEL TOMBOL TERPISAH) =====
 // =============================================================
-BLYNK_WRITE(V0) { // Tombol Maju
+BLYNK_WRITE(V0) { // Tombol Maju (W)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
   if (param.asInt() == 1) { currentCmd = 'W'; } else { currentCmd = ' '; }
-}
+  robotStep = 0;
 
-BLYNK_WRITE(V1) { // Tombol Kiri
+BLYNK_WRITE(V1) { // Tombol Kiri (A)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
   if (param.asInt() == 1) { currentCmd = 'A'; } else { currentCmd = ' '; }
+  robotStep = 0;
 }
 
-BLYNK_WRITE(V2) { // Tombol Kanan
+BLYNK_WRITE(V2) { // Tombol Kanan (D)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
   if (param.asInt() == 1) { currentCmd = 'D'; } else { currentCmd = ' '; }
+  robotStep = 0;
 }
 
-BLYNK_WRITE(V6) { // Tombol mundur
+BLYNK_WRITE(V6) { // Tombol Mundur (S)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
   if (param.asInt() == 1) { currentCmd = 'S'; } else { currentCmd = ' '; }
+  robotStep = 0;
 }
 
-BLYNK_WRITE(V3) { // Tombol LED ON
+BLYNK_WRITE(V5) { // Tombol eshait (Duduk/E)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
+  if (param.asInt() == 1) { currentCmd = 'E'; } else { currentCmd = ' '; }
+  robotStep = 0;
+}
+
+BLYNK_WRITE(V7) { // Sleepy nigga (Tidur/Q)
+  if (modeAuto == true) return; // Jika Auto, ABAIKAN
+  
+  if (param.asInt() == 1) { currentCmd = 'Q'; } else { currentCmd = ' '; }
+  robotStep = 0;
+}
+
+BLYNK_WRITE(V3) { // Tombol LED ON (1)
   if (param.asInt() == 1) {
     ledAktif = true;
     Blynk.virtualWrite(V4, 0); // Matikan tombol V4 di app
   }
 }
 
-BLYNK_WRITE(V4) { // Tombol LED OFF
+BLYNK_WRITE(V4) { // Tombol LED OFF (2)
   if (param.asInt() == 1) {
     ledAktif = false;
     Blynk.virtualWrite(V3, 0); // Matikan tombol V3 di app
   }
 }
 
-BLYNK_WRITE(V5) { // Tombol eshait
-  if (param.asInt() == 1) { currentCmd = 'E'; } else { currentCmd = ' '; }
+BLYNK_WRITE(V8) { // Tombol Mode Autopilot/Manual
+  int pinValue = param.asInt();
+  
+  if (pinValue == 1) {
+    // AKTIFKAN AUTOPILOT
+    modeAuto = true;
+    currentCmd = ' '; // Reset gerakan yang mungkin sedang berlangsung
+    autoStep = 0;     // Mulai siklus Scan-Decision-Act dari awal
+    Serial.println("Mode: AUTOPILOT AKTIF");
+  } else {
+    // KEMBALI KE MANUAL
+    modeAuto = false;
+    currentCmd = ' '; // Hentikan gerakan otonom
+    robotStep = 0;    // Reset langkah robot
+    // Kembalikan kepala ke tengah saat mode manual
+    pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_TENGAH)); 
+    Serial.println("Mode: MANUAL AKTIF");
+  }
 }
-BLYNK_WRITE(V7) { // Sleepy nigga
-  if (param.asInt() == 1) { currentCmd = 'Q'; } else { currentCmd = ' '; }
-}
-
 
 // ===== KONTROL DARI SERIAL MONITOR (CMD) =====
 void checkSerialCommands() {
   if (Serial.available() > 0) {
     char c = toupper(Serial.read());
-    if (c == 'W' || c == 'A' || c == 'D' || c == ' ' || c == 'E' || c == 'S' || c == 'Q') {
+
+    if (c == 'P') {
+      if (modeAuto == false) {
+        modeAuto = true;
+        currentCmd = ' '; // Reset gerakan
+        autoStep = 0;     // Mulai scan dari awal
+        Serial.println("Mode diubah ke AUTOPILOT (via Serial)");
+      } else {
+        modeAuto = false;
+        currentCmd = ' ';
+        robotStep = 0;
+        pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_TENGAH)); 
+        Serial.println("Mode diubah ke MANUAL (via Serial)");
+      }
+      // Setelah switch mode, KELUAR dari fungsi
+      return; 
+    }
+
+    // 2. Logika LED (Bisa diakses di mode manapun)
+    else if (c == '1') { // LED ON
+      ledAktif = true;
+      Blynk.virtualWrite(V3, 1); Blynk.virtualWrite(V4, 0);
+      Serial.println("Perintah: LED ON");
+    } 
+    else if (c == '2') { // LED OFF
+      ledAktif = false;
+      Blynk.virtualWrite(V3, 0); Blynk.virtualWrite(V4, 1);
+      Serial.println("Perintah: LED OFF");
+    }
+
+    // 3. Logika Gerakan Manual (Hanya di Mode Manual)
+    else if (c == 'W' || c == 'A' || c == 'D' || c == ' ' || c == 'E' || c == 'S' || c == 'Q') {
+      if (modeAuto == false) {
+        // Hanya izinkan perintah gerakan jika di mode MANUAL
         currentCmd = c;
+        robotStep = 0; // Reset langkah robot
         Serial.print("Perintah Gerak: "); Serial.println(c);
-    } else if (c == '1') {
-        ledAktif = true;
-        Blynk.virtualWrite(V3, 1); Blynk.virtualWrite(V4, 0);
-        Serial.println("Perintah: LED ON");
-    } else if (c == '2') {
-        ledAktif = false;
-        Blynk.virtualWrite(V3, 0); Blynk.virtualWrite(V4, 1);
-        Serial.println("Perintah: LED OFF");
+      } else {
+        // Jika di mode Autopilot, abaikan dan beri tahu
+        Serial.println("Gerakan manual diabaikan (Mode Autopilot aktif).");
+      }
     }
   }
 }
@@ -23180,11 +23223,95 @@ void updateRobot() {
     }
 }
 
+void runManualMode() {
+  int jarakSaatIni = getDistance();
+
+  if (jarakSaatIni <= JARAK_WARNING && jarakSaatIni > 0) {
+    digitalWrite(BUZZER_PIN, HIGH); 
+  } else {
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+  updateRobotMovement(); 
+}
+
+void runAutoMode() {
+  unsigned long now = millis();
+  
+  switch (autoStep) {
+    case 0: // Persiapan: Stop Robot & Lirik KANAN
+      currentCmd = ' '; // Pastikan robot diam saat scan
+      updateRobotMovement(); // Eksekusi diam
+      pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_KANAN));
+      prevMillisAuto = now;
+      autoStep = 1;
+      break;
+
+    case 1: // Tunggu servo gerak & Baca Kanan -> Lirik TENGAH
+      if (now - prevMillisAuto > 400) { // Tunggu 400ms
+        distKanan = getDistance();
+        pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_TENGAH));
+        prevMillisAuto = now;
+        autoStep = 2;
+      }
+      break;
+
+    case 2: // Tunggu servo gerak & Baca Tengah -> Lirik KIRI
+      if (now - prevMillisAuto > 400) {
+        distTengah = getDistance();
+        pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_KIRI));
+        prevMillisAuto = now;
+        autoStep = 3;
+      }
+      break;
+
+    case 3: // Tunggu servo gerak & Baca Kiri -> Balik TENGAH & KEPUTUSAN
+      if (now - prevMillisAuto > 400) {
+        distKiri = getDistance();
+        pca.setPWM(HEAD_SERVO_PIN, 0, angleToPulse(HEAD_TENGAH));
+        
+        // LOGIKA KEPUTUSAN (AI SEDERHANA)
+        if (distTengah > JARAK_AMAN) {
+          currentCmd = 'W'; // Jalan Maju
+          autoStep = 4;     // Masuk fase jalan
+        } else {
+          // Ada halangan di depan
+          if (distKanan > distKiri && distKanan > JARAK_AMAN) {
+            currentCmd = 'D'; // Belok Kanan
+          } else if (distKiri >= distKanan && distKiri > JARAK_AMAN) {
+            currentCmd = 'A'; // Belok Kiri
+          } else {
+            currentCmd = 'S'; // Mundur (Jalan buntu)
+          }
+          autoStep = 4; // Masuk fase jalan
+        }
+        prevMillisAuto = now;
+      }
+      break;
+
+    case 4: // Fase EKSEKUSI GERAKAN
+      updateRobotMovement(); // Robot bergerak sesuai currentCmd
+
+      long durasiJalan = (currentCmd == 'W') ? 2000 : 800;
+      
+      if (now - prevMillisAuto > durasiJalan) {
+        currentCmd = ' '; // Stop dulu
+        autoStep = 0;     // Ulangi scan dari awal
+      }
+      break;
+  }
+}
+
 // ===== LOOP UTAMA =====
 void loop() {
-    Blynk.run();
-    checkSerialCommands();
-    updateLED();
-    updateRobot();
-		updateAnimasi();
+  Blynk.run();
+  checkSerialCommands();
+  updateLED(); 
+
+  if (modeAuto) {
+    runAutoMode();   
+  } else {
+    runManualMode(); 
+  }
+
+  updateAnimasi(); 
 }
